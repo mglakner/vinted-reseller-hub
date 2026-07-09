@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Expenses — Vinted Hub{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>💰 New expense</h2>
+  <form method="post" action="/expenses" class="row3">
+    <label>What <input name="name" required placeholder="e.g. shipping bags"></label>
+    <label>Amount <input name="amount" type="number" step="0.5" min="0" required inputmode="decimal"></label>
+    <button type="submit" class="button">Add</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Other costs — total {{ total|kr }}</h2>
+  <p class="muted">Packaging, labels, etc. Deducted from overall profit.</p>
+  <table>
+    <thead><tr><th>Item</th><th class="num">Amount</th><th></th></tr></thead>
+    <tbody>
+    {% for e in expenses %}
+      <tr>
+        <td>{{ e.name }}{% if e.spent_date %}<br><small>{{ e.spent_date.strftime("%d/%m/%Y") }}</small>{% endif %}</td>
+        <td class="num">{{ e.amount|kr }}</td>
+        <td class="num">
+          <form method="post" action="/expenses/{{ e.id }}/delete" onsubmit="return confirm('Delete {{ e.name }}?')">
+            <button type="submit" class="button ghost small">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="muted">No expenses yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

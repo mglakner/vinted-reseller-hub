@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}Vinted Hub{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">Vinted<span>Hub</span></a>
+  <nav>
+    <a href="/" {% if request.url.path == '/' %}class="active"{% endif %}>Overview</a>
+    <a href="/items" {% if request.url.path.startswith('/items') %}class="active"{% endif %}>Items</a>
+    <a href="/insights" {% if request.url.path.startswith('/insights') %}class="active"{% endif %}>Insights</a>
+    <a href="/expenses" {% if request.url.path.startswith('/expenses') %}class="active"{% endif %}>Expenses</a>
+    <a href="/status" {% if request.url.path.startswith('/status') %}class="active"{% endif %}>Status</a>
+  </nav>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+<a class="fab" href="/items/new" aria-label="New item">+&nbsp;New item</a>
+</body>
+</html>

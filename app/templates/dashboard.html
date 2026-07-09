@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if d.review_items %}
+<section class="card warn-card">
+  <h2>⚠ Needs review ({{ d.review_items|length }})</h2>
+  <ul class="plain-list">
+    {% for i in d.review_items[:6] %}
+    <li><a href="/items/{{ i.id }}">{{ i.name }}</a> <small>{{ i.review_note }}</small></li>
+    {% endfor %}
+    {% if d.review_items|length > 6 %}<li><small>… and {{ d.review_items|length - 6 }} more</small></li>{% endif %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="tiles">
+  <div class="tile hero">
+    <span class="tile-label">Overall profit</span>
+    <span class="tile-value">{{ d.overall_profit|kr }}</span>
+    <span class="tile-sub">net {{ d.net_profit|kr }} − expenses {{ d.total_expenses|kr }}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Sold</span>
+    <span class="tile-value">{{ d.total_sold }}</span>
+    <span class="tile-sub">of {{ d.total_bought }} bought</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Active listings</span>
+    <span class="tile-value">{{ d.total_active }}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Revenue</span>
+    <span class="tile-value">{{ d.total_revenue|kr }}</span>
+    <span class="tile-sub">invested {{ d.total_invested|kr }}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Avg. ROI (sold)</span>
+    <span class="tile-value">{% if d.avg_roi is not none %}{{ "%.0f"|format(d.avg_roi) }}%{% else %}–{% endif %}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Avg. days to sale</span>
+    <span class="tile-value">{% if d.avg_days_to_sale is not none %}{{ "%.0f"|format(d.avg_days_to_sale) }}{% else %}–{% endif %}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Tied up in stock</span>
+    <span class="tile-value">{{ d.stock_value|kr }}</span>
+    <span class="tile-sub">potential revenue {{ d.potential_revenue|kr }}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Sell-through</span>
+    <span class="tile-value">{% if d.sell_through is not none %}{{ "%.0f"|format(d.sell_through) }}%{% else %}–{% endif %}</span>
+    <span class="tile-sub">share of bought items sold</span>
+  </div>
+</section>
+
+{% if chart %}
+<section class="card">
+  <h2>📈 Profit per month</h2>
+  {{ chart|safe }}
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>🏅 Top profit</h2>
+  <table>
+    <thead><tr><th>Item</th><th class="num">Bought</th><th class="num">Sold</th><th class="num">Profit</th></tr></thead>
+    <tbody>
+    {% for i in d.top_items %}
+      <tr>
+        <td><a href="/items/{{ i.id }}">{{ i.name }}</a><br><small>{{ i.brand }}</small></td>
+        <td class="num">{{ i.purchase_price|kr }}</td>
+        <td class="num">{{ i.sale_price|kr }}</td>
+        <td class="num profit">{{ i.net_profit|kr }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if d.stale_items %}
+<section class="card">
+  <h2>🐌 Consider a price drop</h2>
+  <p class="muted">Listed 30+ days with no offers.</p>
+  <ul class="plain-list">
+    {% for i in d.stale_items %}
+    <li><a href="/items/{{ i.id }}">{{ i.name }}</a>
+      <small>{{ i.days_listed }} days · {{ i.views }} views · {{ i.list_price|kr }}
+      {%- if stale_suggestions[i.id] %} → <strong>suggested: {{ stale_suggestions[i.id]|kr }}</strong>{% endif %}</small></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<p class="center"><a class="button ghost" href="/export.xlsx">⬇ Export accounts (Excel)</a></p>
+{% endblock %}

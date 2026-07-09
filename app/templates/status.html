@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Status — Vinted Hub{% endblock %}
+{% block content %}
+<section class="tiles">
+  <div class="tile">
+    <span class="tile-label">Gmail sync</span>
+    <span class="tile-value">{{ "✔" if gmail_configured else "—" }}</span>
+    <span class="tile-sub">{{ "configured" if gmail_configured else "not set up (.env)" }}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Vinted cookie</span>
+    <span class="tile-value">{{ "✔" if vinted_cookie_set else "—" }}</span>
+    <span class="tile-sub">{{ "set" if vinted_cookie_set else "missing" }}</span>
+  </div>
+  <div class="tile">
+    <span class="tile-label">Higgsfield</span>
+    <span class="tile-value">{{ higgsfield_backend }}</span>
+    <span class="tile-sub">{{ pending_images }} images queued/failed</span>
+  </div>
+</section>
+
+<section class="card">
+  <h2>🔑 Vinted connection</h2>
+  <p class="muted">Log in to Vinted in a browser, copy the whole <code>Cookie</code> header from an API request
+     (DevTools → Network) and paste it here. Your user ID is in your profile URL.</p>
+  {% if probe_result %}<p class="{% if probe_result.startswith('OK') %}profit{% else %}error{% endif %}">{{ probe_result }}</p>{% endif %}
+  <form method="post" action="/status/vinted" class="stack">
+    <label>Cookie <textarea name="cookie" rows="3" placeholder="{% if vinted_cookie_set %}(set — paste only to refresh){% else %}v_udt=…; access_token_web=…{% endif %}"></textarea></label>
+    <label>User ID <input name="user_id" value="{{ vinted_user_id }}" placeholder="e.g. 123456789"></label>
+    <button type="submit" class="button">Save & test</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>🚀 Assisted Vinted listing (setup)</h2>
+  <p class="muted">One-time setup on the computer you list from — no extension needed:</p>
+  <ol class="muted" style="margin:0 0 .8rem;padding-left:1.2rem">
+    <li>Show the bookmarks bar (Chrome: <code>Ctrl/Cmd+Shift+B</code>).</li>
+    <li><strong>Drag</strong> this button up onto the bookmarks bar:</li>
+  </ol>
+  <p><a class="button" href="{{ bookmarklet|safe }}" onclick="return false">📥 Fill Vinted</a></p>
+  <ol class="muted" start="3" style="margin:.8rem 0 0;padding-left:1.2rem">
+    <li>On an item in the app: click “Fill on Vinted” → Vinted opens.</li>
+    <li>Click the <strong>Fill Vinted</strong> bookmark — title, description, price and photos fill in.</li>
+    <li>Check the category/brand/size and hit <strong>Upload</strong> yourself.</li>
+  </ol>
+</section>
+
+<section class="card">
+  <h2>⚡ One-click auto-fill (optional)</h2>
+  <p class="muted">Want to skip the bookmark click, so “Fill on Vinted” fills the form all by itself?
+     It needs a small extension (browsers only allow auto-fill on Vinted via an extension):</p>
+  <ol class="muted" style="margin:0;padding-left:1.2rem">
+    <li>Install the <strong>Tampermonkey</strong> extension.</li>
+    <li>In Chrome: <code>chrome://extensions</code> → enable <strong>Developer mode</strong> (or Tampermonkey → Details → <strong>Allow User Scripts</strong>).</li>
+    <li>Open the <a href="/static/vinted-autofill.user.js?v=2">auto-fill script</a> and click Install.</li>
+  </ol>
+</section>
+
+<section class="card">
+  <h2>🗒 Recent job runs</h2>
+  <table>
+    <thead><tr><th>Job</th><th>Time</th><th>Result</th></tr></thead>
+    <tbody>
+    {% for r in runs %}
+      <tr>
+        <td>{{ r.job_name }}</td>
+        <td><small>{{ r.started_at.strftime("%d/%m %H:%M") }}</small></td>
+        <td>{% if r.ok is none %}⏳{% elif r.ok %}<span class="profit">✔</span> <small>{{ r.message[:120] }}</small>{% else %}<span class="error">✘</span> <small>{{ r.message[:200] }}</small>{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="muted">No runs yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

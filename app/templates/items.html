@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Items — Vinted Hub{% endblock %}
+{% block content %}
+<form class="filters" method="get" action="/items">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search item or brand…">
+  <select name="status" onchange="this.form.submit()">
+    <option value="">All statuses</option>
+    {% for key, label in STATUS_LABELS.items() %}
+    <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="sort" onchange="this.form.submit()">
+    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+    <option value="profit" {% if sort == 'profit' %}selected{% endif %}>Highest profit</option>
+    <option value="days" {% if sort == 'days' %}selected{% endif %}>Most days listed</option>
+    <option value="name" {% if sort == 'name' %}selected{% endif %}>Name A-Z</option>
+  </select>
+  <button type="submit">Search</button>
+</form>
+
+<section class="card">
+  <table>
+    <thead><tr><th></th><th>Item</th><th>Status</th><th class="num">Bought</th><th class="num">List/Sale</th><th class="num">Profit</th></tr></thead>
+    <tbody>
+    {% for i in items %}
+      <tr {% if i.needs_review %}class="review-row"{% endif %}>
+        <td class="thumb-cell">
+          {% if thumbs.get(i.id) %}<a href="/items/{{ i.id }}"><img class="thumb" src="/thumb/{{ thumbs[i.id] }}" alt="" loading="lazy"></a>
+          {% else %}<span class="thumb thumb-empty">📦</span>{% endif %}
+        </td>
+        <td><a href="/items/{{ i.id }}">{{ i.name }}</a><br><small>{{ i.brand }}{% if i.needs_review %} · ⚠ review{% endif %}</small></td>
+        <td><span class="badge badge-{{ i.status }}">{{ i.status_label }}</span></td>
+        <td class="num">{{ i.purchase_price|kr }}</td>
+        <td class="num">{% if i.sale_price %}{{ i.sale_price|kr }}{% else %}{{ i.list_price|kr }}{% endif %}</td>
+        <td class="num {% if i.net_profit and i.net_profit > 0 %}profit{% endif %}">{{ i.net_profit|kr }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">No items found.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+<p class="muted center">{{ items|length }} items</p>
+{% endblock %}

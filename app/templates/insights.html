@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Insights — Vinted Hub{% endblock %}
+{% block content %}
+
+{% if brand_chart %}
+<section class="card">
+  <h2>🏆 Profit per brand</h2>
+  {{ brand_chart|safe }}
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>👔 Brands</h2>
+  <p class="muted">What to buy more of? High avg. ROI + fast sales + high sell-through = yes please.</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Brand</th><th class="num">Bought</th><th class="num">Sold</th><th class="num">Profit</th><th class="num">Avg. ROI</th><th class="num">Avg. days</th></tr></thead>
+    <tbody>
+    {% for g in brands[:25] %}
+      <tr>
+        <td>{{ g.name }}</td>
+        <td class="num">{{ g.bought }}</td>
+        <td class="num">{{ g.sold }} <small>({{ "%.0f"|format(g.sell_through) }}%)</small></td>
+        <td class="num {% if g.profit > 0 %}profit{% endif %}">{{ g.profit|kr }}</td>
+        <td class="num">{% if g.avg_roi is not none %}{{ "%.0f"|format(g.avg_roi) }}%{% else %}–{% endif %}</td>
+        <td class="num">{% if g.avg_days is not none %}{{ "%.0f"|format(g.avg_days) }}{% else %}–{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>🗂 Categories</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Category</th><th class="num">Bought</th><th class="num">Sold</th><th class="num">Profit</th><th class="num">Avg. ROI</th><th class="num">Avg. days</th></tr></thead>
+    <tbody>
+    {% for g in categories %}
+      <tr>
+        <td>{{ g.name }}</td>
+        <td class="num">{{ g.bought }}</td>
+        <td class="num">{{ g.sold }} <small>({{ "%.0f"|format(g.sell_through) }}%)</small></td>
+        <td class="num {% if g.profit > 0 %}profit{% endif %}">{{ g.profit|kr }}</td>
+        <td class="num">{% if g.avg_roi is not none %}{{ "%.0f"|format(g.avg_roi) }}%{% else %}–{% endif %}</td>
+        <td class="num">{% if g.avg_days is not none %}{{ "%.0f"|format(g.avg_days) }}{% else %}–{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

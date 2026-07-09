@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} — Vinted Hub{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>{{ item.name }} <span class="badge badge-{{ item.status }}">{{ item.status_label }}</span></h2>
+  {% if item.needs_review %}<p class="error">⚠ {{ item.review_note or "Review this item." }} (Save to clear the flag.)</p>{% endif %}
+
+  {% set shown = images|selectattr('filename')|list %}
+  {% if shown %}
+  <div class="gallery">
+    {% for img in shown %}
+    <figure>
+      <a href="/media/{{ img.filename }}" target="_blank"><img src="/media/{{ img.filename }}" alt="" loading="lazy"></a>
+      <figcaption>{% if img.kind == 'generated' %}✨ {{ SHOT_LABELS.get(img.shot_key, 'Generated') }}{% else %}Raw photo{% endif %}</figcaption>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if item.status in ('active', 'offer') %}
+  <div class="stat-row">
+    <span>👁 {{ item.views }} views</span><span>❤ {{ item.likes }} likes</span>
+    <span>💬 {{ item.offer_count }} offers{% if item.highest_offer %} (highest {{ item.highest_offer|kr }}){% endif %}</span>
+    {% if item.days_listed is not none %}<span>📆 {{ item.days_listed }} days listed</span>{% endif %}
+  </div>
+  {% endif %}
+  {% if item.status == 'sold' %}
+  <div class="stat-row">
+    <span class="profit">Profit: {{ item.net_profit|kr }}</span>
+    {% if item.roi is not none %}<span>ROI {{ "%.0f"|format(item.roi) }}%</span>{% endif %}
+    {% if item.days_to_sale is not none %}<span>sold in {{ item.days_to_sale }} days</span>{% endif %}
+  </div>
+  {% endif %}
+</section>
+
+{% if item.status != 'sold' %}
+<section class="card">
+  <h2>🎨 Generate product photos</h2>
+  {% if not has_raw %}
+    <p class="muted">Add at least one raw photo of the item first (edit the item and upload a photo).</p>
+  {% else %}
+  <p class="muted">Pick which images Higgsfield should create from your raw photo. Each costs about {{ credits_per_shot }} credits.</p>
+  <form method="post" action="/items/{{ item.id }}/generate" class="stack">
+    <div class="shot-grid">
+      {% for s in shots %}
+      {% set st = image_status.get(s.key) %}
+      <label class="shot-opt">
+        <input type="checkbox" name="shot_keys" value="{{ s.key }}"
+               {% if s.key in core_keys and not st %}checked{% endif %} onchange="vhEstimate()">
+        <span class="shot-name">{{ s.label }}
+          {%- if st == 'done' %} ✨{% elif st == 'pending' %} ⏳{% elif st == 'generating' %} ⚙{% elif st == 'error' %} ⚠{% endif %}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="row-between">
+      <small class="muted" id="vh-estimate"></small>
+      <button type="submit" class="button">Generate selected</button>
+    </div>
+  </form>
+  {% set errored = images|selectattr('gen_status','equalto','error')|list %}
+  {% if errored %}<p class="error"><small>Failed: {{ errored|map(attribute='shot_key')|join(', ') }} — try again, or check your Higgsfield credits.</small></p>{% endif %}
+  <script>
+  const VH_CREDITS = {{ credits_per_shot }};
+  function vhEstimate(){
+    const n = document.querySelectorAll('input[name="shot_keys"]:checked').length;
+    document.getElementById('vh-estimate').textContent = n ? (n + ' shots ≈ ' + (n*VH_CREDITS) + ' credits') : 'Pick at least one';
+  }
+  vhEstimate();
+  </script>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if price_suggestion %}
+<section class="card warn-card">
+  <h2>🐌 Slow mover</h2>
+  <p>{{ item.days_listed }} days with no offers. Consider dropping the price to <strong>{{ price_suggestion|kr }}</strong>.</p>
+</section>
+{% endif %}
+
+{% if item.status in ('draft', 'active', 'offer') %}
+<section class="card">
+  <h2>🚀 List on Vinted</h2>
+
+  <h3 class="sub">💻 On a computer (one click)</h3>
+  <p class="muted">Opens Vinted's new-listing page and fills in the title, description, price and photos automatically.
+     Check the category/brand/size and hit <strong>Upload</strong> yourself. (Setup: see the Status page.)</p>
+  <a class="button big" href="{{ vinted_new_url }}" target="_blank" rel="noopener">Fill on Vinted →</a>
+
+  <h3 class="sub" style="margin-top:1.4rem">📱 On a phone (Vinted app)</h3>
+  <p class="muted">Save the photos to your phone, copy the text — then open the Vinted app, create a listing,
+     pick the photos and paste the text.</p>
+  <div class="stack">
+    <button type="button" class="button big" id="vh-share">📥 Save / share photos ({{ images|length }})</button>
+    <label>Title
+      <div class="copy-row">
+        <input id="sug-title" value="{{ suggested_title }}" readonly>
+        <button type="button" onclick="vhCopy('sug-title', this)">Copy</button>
+      </div>
+    </label>
+    <label>Description
+      <div class="copy-row">
+        <textarea id="sug-desc" rows="6" readonly>{{ suggested_description }}</textarea>
+        <button type="button" onclick="vhCopy('sug-desc', this)">Copy</button>
+      </div>
+    </label>
+  </div>
+
+  <script>
+  const VH_PHOTOS = [
+    {% for img in images if img.kind == 'generated' %}"/media/{{ img.filename }}",{% endfor %}
+    {% for img in images if img.kind != 'generated' %}"/media/{{ img.filename }}"{{ "," if not loop.last }}{% endfor %}
+  ].filter(Boolean);
+
+  function vhCopy(id, btn) {
+    navigator.clipboard.writeText(document.getElementById(id).value).then(() => {
+      const t = btn.textContent; btn.textContent = "✔ Copied";
+      setTimeout(() => btn.textContent = t, 1500);
+    });
+  }
+
+  document.getElementById('vh-share').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    if (!VH_PHOTOS.length) { alert('No photos on this item yet.'); return; }
+    btn.disabled = true; btn.textContent = 'Fetching photos…';
+    try {
+      const files = [];
+      for (const u of VH_PHOTOS) {
+        const b = await (await fetch(u)).blob();
+        files.push(new File([b], u.split('/').pop(), { type: b.type || 'image/jpeg' }));
+      }
+      if (navigator.canShare && navigator.canShare({ files })) {
+        // phone: opens the share sheet → Save to Photos / send to the Vinted app
+        await navigator.share({ files, title: {{ item.name|tojson }} });
+      } else {
+        // computer / no share API: download the files
+        for (const f of files) {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(f); a.download = f.name; a.click();
+          URL.revokeObjectURL(a.href);
+        }
+      }
+    } catch (err) {
+      if (err && err.name !== 'AbortError') alert('Could not share photos: ' + err);
+    } finally {
+      btn.disabled = false; btn.textContent = '📥 Save / share photos (' + VH_PHOTOS.length + ')';
+    }
+  });
+  </script>
+</section>
+{% endif %}
+
+{% if item.status == 'draft' %}
+<section class="card">
+  <h2>🏷 Mark as listed</h2>
+  <form method="post" action="/items/{{ item.id }}/listed" class="row3">
+    <label>List price <input name="list_price" type="number" step="1" min="0" required inputmode="decimal"
+      value="{{ item.expected_price if item.expected_price is not none else '' }}"></label>
+    <label>Listing date <input name="listed_date" type="date"></label>
+    <button type="submit" class="button">Listed ✔</button>
+  </form>
+</section>
+{% endif %}
+
+{% if item.status != 'sold' %}
+<section class="card">
+  <h2>💸 Mark as sold</h2>
+  <form method="post" action="/items/{{ item.id }}/sold" class="row3">
+    <label>Sale price <input name="sale_price" type="number" step="0.5" min="0" required inputmode="decimal"></label>
+    <label>Sale date <input name="sale_date" type="date"></label>
+    <button type="submit" class="button">Sold ✔</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="card">
+  <details {% if item.needs_review %}open{% endif %}>
+    <summary><h2>✏️ Edit</h2></summary>
+    <form method="post" action="/items/{{ item.id }}/edit" class="stack">
+      <label>Item <input name="name" value="{{ item.name }}" required></label>
+      <div class="row2">
+        <label>Brand <input name="brand" value="{{ item.brand }}"></label>
+        <label>Category <input name="category" value="{{ item.category }}"></label>
+      </div>
+      <div class="row2">
+        <label>Condition <input name="condition" value="{{ item.condition }}"></label>
+        <label>Status
+          <select name="status">
+            {% for key, label in STATUS_LABELS.items() %}
+            <option value="{{ key }}" {% if item.status == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="row2">
+        <label>Purchase price <input name="purchase_price" type="number" step="0.5" value="{{ item.purchase_price }}"></label>
+        <label>Date bought <input name="purchase_date" type="date" value="{{ item.purchase_date or '' }}"></label>
+      </div>
+      <div class="row2">
+        <label>List price <input name="list_price" type="number" step="1" value="{{ item.list_price if item.list_price is not none else '' }}"></label>
+        <label>Listing date <input name="listed_date" type="date" value="{{ item.listed_date or '' }}"></label>
+      </div>
+      <div class="row2">
+        <label>Sale price <input name="sale_price" type="number" step="0.5" value="{{ item.sale_price if item.sale_price is not none else '' }}"></label>
+        <label>Sale date <input name="sale_date" type="date" value="{{ item.sale_date or '' }}"></label>
+      </div>
+      <div class="row2">
+        <label>Bump cost <input name="bump_cost" type="number" step="1" value="{{ item.bump_cost }}"></label>
+        <label>Shipping <input name="shipping_cost" type="number" step="0.5" value="{{ item.shipping_cost }}"></label>
+      </div>
+      <div class="row2">
+        <label>Vinted fee <input name="vinted_fee" type="number" step="0.5" value="{{ item.vinted_fee }}"></label>
+        <label>Vinted ID <input name="vinted_id" value="{{ item.vinted_id or '' }}" placeholder="filled by sync"></label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2">{{ item.notes }}</textarea></label>
+      <button type="submit" class="button">Save changes</button>
+    </form>
+
+    <hr class="divider">
+    <form method="post" action="/items/{{ item.id }}/delete"
+          onsubmit="return confirm('Delete this item permanently? This cannot be undone.')">
+      <button type="submit" class="button danger">🗑 Delete item</button>
+    </form>
+  </details>
+</section>
+{% endblock %}
