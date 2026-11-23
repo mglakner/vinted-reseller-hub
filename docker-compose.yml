@@ -9,7 +9,7 @@ services:
       - APP_PASSWORD=${APP_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
       - VINTED_DOMAIN=www.vinted.com
-      - CURRENCY=USD
+      - CURRENCY=$
       - TZ=America/Indianapolis
     volumes:
       - vinted-data:/srv/vinted-hub/data
