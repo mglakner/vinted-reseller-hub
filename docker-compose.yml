@@ -6,11 +6,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      APP_PASSWORD=${APP_PASSWORD}
-      SECRET_KEY=${SECRET_KEY}
-      VINTED_DOMAIN=www.vinted.com
-      CURRENCY=USD
-      TZ=America/Indianapolis
+      - APP_PASSWORD=${APP_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - VINTED_DOMAIN=www.vinted.com
+      - CURRENCY=USD
+      - TZ=America/Indianapolis
     volumes:
       - vinted-data:/srv/vinted-hub/data
 
