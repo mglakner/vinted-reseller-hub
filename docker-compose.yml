@@ -10,7 +10,7 @@ services:
       SECRET_KEY=change-me
       VINTED_DOMAIN=www.vinted.com
       CURRENCY=USD
-      TZ: America/Indianapolis
+      TZ=America/Indianapolis
     volumes:
       - vinted-data:/srv/vinted-hub/data
 
