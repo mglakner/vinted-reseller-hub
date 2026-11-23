@@ -6,8 +6,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      APP_PASSWORD=change-me
-      SECRET_KEY=change-me
+      APP_PASSWORD=${APP_PASSWORD}
+      SECRET_KEY=${SECRET_KEY}
       VINTED_DOMAIN=www.vinted.com
       CURRENCY=USD
       TZ=America/Indianapolis
