@@ -1,14 +1,17 @@
 services:
   vinted-hub:
     build: .
+    container_name: vinted-hub
     restart: unless-stopped
-    env_file: .env
     ports:
       - "8000:8000"
+    environment:
+      # one line per variable from the repo's .env.example
+      # format:  NAME: ${NAME}
+      EXAMPLE_KEY: ${EXAMPLE_KEY}
+      TZ: America/Indianapolis
     volumes:
-      - ./data:/srv/vinted-hub/data
-      # Higgsfield login token is stored under data/ (see app/higgsfield_mcp.py)
+      - vinted-data:/srv/vinted-hub/data
 
-# For a public HTTPS URL (so you can use the app + phone from anywhere), put a
-# reverse proxy or a Cloudflare Tunnel in front of http://localhost:8000.
-# See DEPLOY.md.
+volumes:
+  vinted-data:
