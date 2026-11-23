@@ -6,9 +6,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # one line per variable from the repo's .env.example
-      # format:  NAME: ${NAME}
-      EXAMPLE_KEY: ${EXAMPLE_KEY}
+      APP_PASSWORD=change-me
+      SECRET_KEY=change-me
+      VINTED_DOMAIN=www.vinted.com
+      CURRENCY=USD
       TZ: America/Indianapolis
     volumes:
       - vinted-data:/srv/vinted-hub/data
